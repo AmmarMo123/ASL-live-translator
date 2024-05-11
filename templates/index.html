@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Video Processing</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh; /* Ensure the content is centered vertically */
+            margin: 0; /* Remove default margin */
+        }
+
+        h1 {
+            text-align: center; /* Center-align the title */
+        }
+
+        #processedFrame {
+            margin-top: 20px; /* Add some space between the title and the video */
+        }
+    </style>
+</head>
+<body>
+    <h1>Live Video Processing</h1>
+    <button id="startButton">Start Video Processing</button>
+    <script>
+        document.getElementById('startButton').addEventListener('click', function() {
+            if (navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (stream) {
+                        var video = document.createElement('video');
+                        video.srcObject = stream;
+                        video.autoplay = true;
+
+                        // Wait for the video to be loaded and start processing frames
+                        video.onloadedmetadata = function() {
+                            setInterval(function() {
+                                sendFrameToServer(video);
+                            }, 1000 / 30); // Send frame to server every 1/30 seconds (30fps)
+                        };
+                    })
+                    .catch(function (error) {
+                        console.log("Something went wrong!", error);
+                    });
+            }
+        });
+
+        function sendFrameToServer(video) {
+            var canvas = document.createElement('canvas'); // Create a canvas element dynamically
+            var context = canvas.getContext('2d');
+
+            // Set canvas dimensions to match the video element
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Capture frame from the video stream and draw it onto the canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            var imageData = canvas.toDataURL('image/jpeg');
+            fetch('/video', {
+                method: 'POST',
+                body: new URLSearchParams({ image: imageData }), // Ensure the form data key is set
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded' // Set the content type
+                }
+            })
+            .then(response => response.text())
+            .then(data => {
+                // Display processed frame received from the server
+                document.getElementById('processedFrame').src = 'data:image/jpeg;base64,' + data;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+
+    <!-- Display processed frame -->
+    <img id="processedFrame" src="" width="50%"/>
+</body>
+</html>
