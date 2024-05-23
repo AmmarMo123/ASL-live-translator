@@ -1,4 +1,5 @@
-from flask import Flask, render_template, Response, request
+from flask import Flask, request
+from flask_cors import CORS
 import cv2
 import numpy as np
 import base64
@@ -6,6 +7,7 @@ import pickle
 import mediapipe as mp
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS
 
 # Load the gesture recognition model and other required components
 model_dict = pickle.load(open('./model.p', 'rb'))
@@ -68,6 +70,8 @@ def process_frame(frame_data):
 
         predicted_character = labels_dict[int(prediction[0])]
 
+        print("predicted_character", predicted_character)
+
         cv2.rectangle(frame_rgb, (x1, y1), (x2, y2), (0, 0, 0), 4)
         cv2.putText(frame_rgb, predicted_character, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 0), 3,
                     cv2.LINE_AA)
@@ -83,7 +87,7 @@ def process_frame(frame_data):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return "Flask server is running."
 
 @app.route('/video', methods=['POST'])
 def video():
@@ -95,11 +99,6 @@ def video():
 
     # Send the processed frame back to the client
     return processed_frame
-
-@app.route('/processed_video')
-def processed_video():
-    # This route is not used in this implementation
-    pass
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
