@@ -6,6 +6,9 @@ function App() {
   const [processedFrame, setProcessedFrame] = useState('');
   const [processingActive, setProcessingActive] = useState(false);
   const [showStopMessage, setShowStopMessage] = useState(false);
+  const [aslString, setAslString] = useState('');
+  const [lastCharacter, setLastCharacter] = useState('');
+  const [predictedCharacter, setPredictedCharacter] = useState('');
 
   const startVideoProcessing = () => {
     if (navigator.mediaDevices.getUserMedia) {
@@ -42,6 +45,8 @@ function App() {
     }
     video.srcObject = null;
     setProcessedFrame(''); // Clear processed frame
+    setLastCharacter(''); // Clear last character
+    setPredictedCharacter(''); // Clear predicted character
   };
 
   const sendFrameToServer = (video) => {
@@ -53,23 +58,38 @@ function App() {
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageData = canvas.toDataURL('image/jpeg');
 
-    fetch('http://127.0.0.1:5001/video', {
+    fetch('http://127.0.0.1:5002/video', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({ image: imageData }),
     })
-      .then(response => response.text())
+      .then(response => response.json())
       .then(data => {
-        setProcessedFrame(`data:image/jpeg;base64,${data}`);
+        setProcessedFrame(`data:image/jpeg;base64,${data.processed_frame}`);
+        setPredictedCharacter(data.predicted_character); // Set the predicted character
       })
       .catch(error => console.error('Error:', error));
   };
 
+  const clearAslString = () => {
+    setAslString('');
+  };
+
+  useEffect(() => {
+    if (predictedCharacter && predictedCharacter !== lastCharacter) {
+      console.log("Predicted Character:", predictedCharacter);
+      console.log("Last Character:", lastCharacter);
+      console.log("ASL string:", aslString);
+      setLastCharacter(predictedCharacter);
+      setAslString(prevString => prevString + predictedCharacter);
+    }
+  }, [predictedCharacter]);
+
   return (
     <div className="App">
-      <h1>Live ASL translator</h1>
+      <h1>Live ASL Translator</h1>
       {!processingActive ? (
         <button onClick={startVideoProcessing}>Start Video Processing</button>
       ) : (
@@ -78,6 +98,9 @@ function App() {
       <video ref={videoRef} style={{ display: 'none' }}></video>
       {showStopMessage && <p>Video processing has now stopped</p>}
       {processedFrame && !showStopMessage && <img id="processedFrame" src={processedFrame} alt="Processed Frame" width="50%" />}
+      <p>Predicted Character: {predictedCharacter}</p>
+      <p>Translated Text: {aslString}</p>
+      <button onClick={clearAslString}>Clear</button>
     </div>
   );
 }

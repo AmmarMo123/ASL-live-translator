@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import cv2
 import numpy as np
@@ -18,7 +18,7 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 
-labels_dict = {0: 'A', 1: 'B', 2: 'L'}
+labels_dict = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G', 7: 'H', 8: 'I', 9: 'J', 10: 'K', 11: 'L', 12: 'M', 13: 'N', 14: 'O', 15: 'P', 16: 'Q', 17: 'R', 18: 'S', 19: 'T', 20: 'U', 21: 'V', 22: 'W', 23: 'X', 24: 'Y', 25: 'Z', 26: '-'}
 
 def process_frame(frame_data):
     # Decode base64 image data
@@ -37,6 +37,8 @@ def process_frame(frame_data):
     H, W, _ = frame.shape
 
     results = hands.process(frame_rgb)
+    predicted_character = None
+
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
             mp_drawing.draw_landmarks(
@@ -70,8 +72,6 @@ def process_frame(frame_data):
 
         predicted_character = labels_dict[int(prediction[0])]
 
-        print("predicted_character", predicted_character)
-
         cv2.rectangle(frame_rgb, (x1, y1), (x2, y2), (0, 0, 0), 4)
         cv2.putText(frame_rgb, predicted_character, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 0), 3,
                     cv2.LINE_AA)
@@ -83,7 +83,7 @@ def process_frame(frame_data):
     retval, buffer = cv2.imencode('.jpg', processed_frame_bgr)
     img_str = base64.b64encode(buffer).decode()
 
-    return img_str
+    return img_str, predicted_character
 
 @app.route('/')
 def index():
@@ -95,10 +95,10 @@ def video():
     frame_data = request.form['image']
     
     # Process the frame
-    processed_frame = process_frame(frame_data)
+    processed_frame, predicted_character = process_frame(frame_data)
 
-    # Send the processed frame back to the client
-    return processed_frame
+    # Send the processed frame and predicted character back to the client
+    return jsonify({'processed_frame': processed_frame, 'predicted_character': predicted_character})
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5002)
