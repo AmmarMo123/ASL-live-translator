@@ -7,8 +7,9 @@ function App() {
   const [processingActive, setProcessingActive] = useState(false);
   const [showStopMessage, setShowStopMessage] = useState(false);
   const [aslString, setAslString] = useState('');
-  const [lastCharacter, setLastCharacter] = useState('');
   const [predictedCharacter, setPredictedCharacter] = useState('');
+  const [leftHandPresent, setLeftHandPresent] = useState(false);
+  const lastLeftHandPresentRef = useRef(false); // Use ref to track the last left hand presence
 
   const startVideoProcessing = () => {
     if (navigator.mediaDevices.getUserMedia) {
@@ -45,7 +46,6 @@ function App() {
     }
     video.srcObject = null;
     setProcessedFrame(''); // Clear processed frame
-    setLastCharacter(''); // Clear last character
     setPredictedCharacter(''); // Clear predicted character
   };
 
@@ -69,6 +69,7 @@ function App() {
       .then(data => {
         setProcessedFrame(`data:image/jpeg;base64,${data.processed_frame}`);
         setPredictedCharacter(data.predicted_character); // Set the predicted character
+        setLeftHandPresent(data.left_hand_present); // Set the left hand presence
       })
       .catch(error => console.error('Error:', error));
   };
@@ -78,14 +79,16 @@ function App() {
   };
 
   useEffect(() => {
-    if (predictedCharacter && predictedCharacter !== lastCharacter) {
+    if (predictedCharacter && leftHandPresent && !lastLeftHandPresentRef.current) {
       console.log("Predicted Character:", predictedCharacter);
-      console.log("Last Character:", lastCharacter);
       console.log("ASL string:", aslString);
-      setLastCharacter(predictedCharacter);
       setAslString(prevString => prevString + predictedCharacter);
+      lastLeftHandPresentRef.current = leftHandPresent; // Update the ref
+      console.log("Updated Last Left Hand Present:", lastLeftHandPresentRef.current);
+    } else if (!leftHandPresent) {
+      lastLeftHandPresentRef.current = false; // Update the ref when the left hand is not present
     }
-  }, [predictedCharacter]);
+  }, [predictedCharacter, leftHandPresent, aslString]);
 
   return (
     <div className="App">
