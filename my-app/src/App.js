@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
+import './output.css';
+import StartStopButton from './components/StartStopButton';
+import ProcessedFrame from './components/ProcessedFrame';
+import PredictedCharacter from './components/PredictedCharacter';
+import TranslatedText from './components/TranslatedText';
 
 function App() {
   const videoRef = useRef(null);
@@ -91,19 +96,24 @@ function App() {
   }, [predictedCharacter, leftHandPresent, aslString]);
 
   return (
-    <div className="App">
-      <h1>Live ASL Translator</h1>
-      {!processingActive ? (
-        <button onClick={startVideoProcessing}>Start Video Processing</button>
-      ) : (
-        <button onClick={stopVideoProcessing}>Stop Video Processing</button>
-      )}
+    <div class="App">
+      <h1 class="text-3xl font-bold mb-4">Live ASL Translator</h1>
+      <StartStopButton 
+        processingActive={processingActive}
+        startVideoProcessing={startVideoProcessing}
+        stopVideoProcessing={stopVideoProcessing}
+      />
       <video ref={videoRef} style={{ display: 'none' }}></video>
-      {showStopMessage && <p>Video processing has now stopped</p>}
-      {processedFrame && !showStopMessage && <img id="processedFrame" src={processedFrame} alt="Processed Frame" width="50%" />}
-      <p>Predicted Character: {predictedCharacter}</p>
-      <p>Translated Text: {aslString}</p>
-      <button onClick={clearAslString}>Clear</button>
+      {showStopMessage && <p className="text-xl mb-4 text-red-600">Video processing has now stopped</p>}
+      <ProcessedFrame
+        processedFrame={processedFrame} 
+        showStopMessage={showStopMessage}
+      />
+      <PredictedCharacter predictedCharacter={predictedCharacter} />
+      <TranslatedText 
+        aslString={aslString}
+        clearAslString={clearAslString}
+      />
     </div>
   );
 }
