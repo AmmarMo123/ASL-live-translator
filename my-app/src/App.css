@@ -1,0 +1,22 @@
+.App {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; /* Ensure the content is centered vertically */
+  margin: 0; /* Remove default margin */
+}
+
+h1 {
+  text-align: center; /* Center-align the title */
+}
+
+#processedFrameContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px; /* Add some space between the title and the image */
+}
+
+#processedFrame {
+  width: 50%; /* Limit the width of the processed frame */
+}
