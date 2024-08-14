@@ -1,6 +1,6 @@
 This is a Sign Language to English text interpreter, which uses openCV and MediaPipe to detect hand motion, and a  pre-trained random forest classifier model to predict common ASL alphabets. A frontend React web app and a backend Python Flask server were developed to extend the project and make it accessible on the web.
 
-## Process followed to train AI model that predicts alphabets.
+## Process to train AI model that predicts alphabets.
 **Create dataset** -> **Extract desired information from data** -> **Train classifier** -> **Test model**
 
 ### Step 1:
