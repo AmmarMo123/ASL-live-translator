@@ -6,13 +6,14 @@ import base64
 import pickle
 import mediapipe as mp
 
-app = Flask(__name__)
+app = Flask(__name__)  # Initialize Flask app
 CORS(app)  # Enable CORS
 
 # Load the gesture recognition model and other required components
 model_dict = pickle.load(open('./model.p', 'rb'))
 model = model_dict['model']
 
+# Initialize Mediapipe components for hand tracking and drawing
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -26,10 +27,9 @@ def process_frame(frame_data):
     nparr = np.frombuffer(img_data, np.uint8)
     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    # Convert frame to RGB (OpenCV uses BGR by default)
+    # Convert the frame from BGR (OpenCV default) to RGB (used by Mediapipe)
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    # Initialize variables
     H, W, _ = frame.shape
     predicted_character = None
     left_hand_present = False
@@ -46,6 +46,7 @@ def process_frame(frame_data):
                 x_ = []
                 y_ = []
 
+                # Draw hand landmarks on the frame
                 mp_drawing.draw_landmarks(
                     frame_rgb,  
                     hand_landmarks,  
@@ -53,24 +54,29 @@ def process_frame(frame_data):
                     mp_drawing_styles.get_default_hand_landmarks_style(),
                     mp_drawing_styles.get_default_hand_connections_style())
 
+                # Collect x and y coordinates of hand landmarks
                 for landmark in hand_landmarks.landmark:
                     x = landmark.x
                     y = landmark.y
                     x_.append(x)
                     y_.append(y)
 
+                # Normalize the coordinates and store them in data_aux
                 for landmark in hand_landmarks.landmark:
                     data_aux.append(landmark.x - min(x_))
                     data_aux.append(landmark.y - min(y_))
 
+                # Define a bounding box around the hand
                 x1 = int(min(x_) * W) - 10
                 y1 = int(min(y_) * H) - 10
                 x2 = int(max(x_) * W) - 10
                 y2 = int(max(y_) * H) - 10
 
+                # Use the model to predict the gesture based on landmarks
                 prediction = model.predict([np.asarray(data_aux)])
                 predicted_character = labels_dict[int(prediction[0])]
 
+                # Draw the bounding box and predicted character on the frame
                 cv2.rectangle(frame_rgb, (x1, y1), (x2, y2), (0, 0, 0), 4)
                 cv2.putText(frame_rgb, predicted_character, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 0), 3,
                             cv2.LINE_AA)
@@ -79,6 +85,7 @@ def process_frame(frame_data):
                 x_ = [landmark.x for landmark in hand_landmarks.landmark]
                 y_ = [landmark.y for landmark in hand_landmarks.landmark]
 
+                # Draw bounding box with the label "Save"
                 x1 = int(min(x_) * W) - 10
                 y1 = int(min(y_) * H) - 10
                 x2 = int(max(x_) * W) - 10
@@ -103,7 +110,7 @@ def index():
 
 @app.route('/video', methods=['POST'])
 def video():
-    # Get frame data from request
+    # Get the base64-encoded image data from the POST request
     frame_data = request.form['image']
     
     # Process the frame
